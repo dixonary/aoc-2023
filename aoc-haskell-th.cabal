@@ -5,21 +5,38 @@ version:            0.1.0.0
 author:             Alex Dixon
 maintainer:         alex@dixonary.co.uk
 
-library
-    hs-source-dirs:   src
+executable aoc
+    main-is:          Main.hs
 
     build-depends:
         base ^>=4.17.0.0,
+        template-haskell,
         witch,
-        containers
-
-    exposed-modules:
+        containers,
+        split,
+        string-interpolate,
+        finite-typelits,
+        text,
+        attoparsec,
+        parser-combinators,
+        filepath,
+        pretty-simple,
+        vector,
+        stm,
+        monad-loops
+        
+    other-modules:
         Aoc
+        Utils.Parsers
+        Utils.Utils
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
 
     default-extensions:
         TemplateHaskell,
+        QuasiQuotes,
         OverloadedStrings, 
-        OverloadedLists,
         LambdaCase,
         RecordWildCards,
         TupleSections,
@@ -31,34 +48,10 @@ library
         MultiParamTypeClasses,
         UndecidableInstances,
         MonoLocalBinds,
-        UnicodeSyntax
-
-
-executable aoc
-    main-is:          Main.hs
-
-    build-depends:
-        base ^>=4.17.0.0,
-        aoc-haskell-th,
-        template-haskell,
-        witch,
-        containers
-
-    hs-source-dirs:   src
-    default-language: Haskell2010
-
-    default-extensions:
-        TemplateHaskell,
-        OverloadedStrings, 
-        OverloadedLists,
-        LambdaCase,
-        RecordWildCards,
-        TupleSections,
+        ImportQualifiedPost
+        DataKinds,
+        BlockArguments,
+        MultiWayIf,
+        ParallelListComp,
         ScopedTypeVariables,
-        TypeApplications,
-        FlexibleContexts,
-        ExistentialQuantification,
-        FlexibleInstances,
-        MultiParamTypeClasses,
-        UndecidableInstances,
-        MonoLocalBinds
+        NoMonomorphismRestriction
