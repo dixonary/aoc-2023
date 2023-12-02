@@ -77,27 +77,24 @@ day01b = sumNumerals (const True)
 parse02 :: Parser [(Integer, [Map Text Integer])]
 parse02 = game `sepBy` endOfLine
  where
-  game = do
-    g <- string "Game " *> decimal
-    string ": "
-    s <- set `sepBy` string "; "
-    pure (g, s)
+  game =
+    (,)
+      <$> (string "Game " *> decimal <* string ": ")
+      <*> (set `sepBy` string "; ")
   set = do
-    ms <- ((,) <$> decimal <*> (skipSpace *> takeWhile isAlpha)) `sepBy` string ", "
+    ms <-
+      ((,) <$> decimal <*> (skipSpace *> takeWhile isAlpha))
+        `sepBy` string ", "
     pure $ Map.fromList (map swap ms)
 
 day02a :: [(Integer, [Map Text Integer])] -> Integer
-day02a xs =
-  xs
-    & filter (not . any tooManyBalls . snd)
-    & map fst
-    & sum
+day02a = sum . map fst . filter (goodBalls . Map.unionsWith max . snd)
  where
-  tooManyBalls m = tooManyRed || tooManyGreen || tooManyBlue
+  goodBalls m = goodRed && goodGreen && goodBlue
    where
-    tooManyRed = Map.lookup "red" m & maybe False (> 12)
-    tooManyGreen = Map.lookup "green" m & maybe False (> 13)
-    tooManyBlue = Map.lookup "blue" m & maybe False (> 14)
+    goodRed = Map.lookup "red" m & maybe True (<= 12)
+    goodGreen = Map.lookup "green" m & maybe True (<= 13)
+    goodBlue = Map.lookup "blue" m & maybe True (<= 14)
 
 day02b :: [(Integer, [Map Text Integer])] -> Integer
 day02b = sum . map (product . Map.unionsWith max . snd)
