@@ -11,28 +11,31 @@ import Utils.Utils as U
 import Data.Function
 import Data.List (find, isPrefixOf)
 
-import Control.Applicative.Combinators (
-  between,
-  count,
-  many,
-  sepBy,
-  sepBy1,
-  (<|>),
- )
+import Control.Applicative.Combinators
 import Control.Arrow ((>>>))
-import Data.Attoparsec.Text hiding (count, sepBy, sepBy1, take)
+import Data.Attoparsec.Text hiding (choice, count, sepBy, sepBy1, take)
 import Data.Bifunctor
 import Data.Either
 import Data.Functor
 import Data.Maybe (catMaybes)
+import Data.Text (Text)
 import Data.Text qualified as T
+
+import Data.Char
+import Data.Map (Map)
+import Data.Map qualified as Map
+import Data.Monoid (Product (..))
+import Data.Tuple (swap)
+import Prelude hiding (takeWhile)
+
+--------------------------------------------------------------------------------
+-- DAY 01
 
 parse01 :: String -> [([(Bool, Integer)], [(Bool, Integer)])]
 parse01 xs =
   xs
     & lines
-    & map (\x -> (x, reverse x))
-    & map (bimap (pparse numLeft) (pparse numRight))
+    & map (\x -> (pparse numLeft x, pparse numRight (reverse x)))
  where
   num ns = catMaybes <$> many (numeral ns)
   numLeft = num numerals
@@ -67,3 +70,34 @@ day01a = sumNumerals fst
 
 day01b :: [([(Bool, Integer)], [(Bool, Integer)])] -> Integer
 day01b = sumNumerals (const True)
+
+--------------------------------------------------------------------------------
+-- DAY 02
+
+parse02 :: Parser [(Integer, [Map Text Integer])]
+parse02 = game `sepBy` endOfLine
+ where
+  game = do
+    g <- string "Game " *> decimal
+    string ": "
+    s <- set `sepBy` string "; "
+    pure (g, s)
+  set = do
+    ms <- ((,) <$> decimal <*> (skipSpace *> takeWhile isAlpha)) `sepBy` string ", "
+    pure $ Map.fromList (map swap ms)
+
+day02a :: [(Integer, [Map Text Integer])] -> Integer
+day02a xs =
+  xs
+    & filter (not . any tooManyBalls . snd)
+    & map fst
+    & sum
+ where
+  tooManyBalls m = tooManyRed || tooManyGreen || tooManyBlue
+   where
+    tooManyRed = Map.lookup "red" m & maybe False (> 12)
+    tooManyGreen = Map.lookup "green" m & maybe False (> 13)
+    tooManyBlue = Map.lookup "blue" m & maybe False (> 14)
+
+day02b :: [(Integer, [Map Text Integer])] -> Integer
+day02b = sum . map (product . Map.unionsWith max . snd)
