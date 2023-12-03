@@ -9,7 +9,7 @@ import Utils.Parsers as P
 import Utils.Utils as U
 
 import Data.Function
-import Data.List (find, isPrefixOf)
+import Data.List (find, foldl', isPrefixOf)
 
 import Control.Applicative.Combinators
 import Control.Arrow ((>>>))
@@ -25,7 +25,10 @@ import Data.Char
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Monoid (Product (..))
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Tuple (swap)
+import Debug.Trace
 import Prelude hiding (takeWhile)
 
 --------------------------------------------------------------------------------
@@ -98,3 +101,55 @@ day02a = sum . map fst . filter (goodBalls . Map.unionsWith max . snd)
 
 day02b :: [(Integer, [Map Text Integer])] -> Integer
 day02b = sum . map (product . Map.unionsWith max . snd)
+
+--------------------------------------------------------------------------------
+-- DAY 03
+
+data SchLabel = Part Char | Digit Integer deriving (Eq)
+
+parse03 :: Parser (Map (Int, Int) SchLabel)
+parse03 = coordinateParser mapper 0
+ where
+  mapper c
+    | c == '.' = Nothing
+    | c `elem` ['0' .. '9'] = Just $ Digit (read [c])
+    | otherwise = Just $ Part c
+
+day03a :: Map (Int, Int) SchLabel -> Integer
+day03a m =
+  Map.keysSet partPositions
+    & Set.map neighbours8
+    & Set.unions
+    & Set.map (flood m)
+    & Set.toList
+    & map (foldl' (\v a -> let Digit n = m Map.! a in v * 10 + n) 0)
+    & sum
+ where
+  partPositions = Map.filter (\case Part _ -> True; _ -> False) m
+
+flood m (x, y) = case Map.lookup (x, y) m of
+  Nothing -> Set.empty
+  Just (Part n) -> Set.empty
+  Just (Digit n) ->
+    let flood' = flood (Map.delete (x, y) m)
+     in flood' (x - 1, y) <> Set.singleton (x, y) <> flood' (x + 1, y)
+
+day03b :: Map (Int, Int) SchLabel -> Integer
+day03b m =
+  starPositions
+    & Set.map neighbours8
+    & Set.unions
+    & Set.map (flood m)
+    & (\ns -> map (\p -> Set.filter (isNeighbour p) ns) $ Set.toList starPositions)
+    & filter (\s -> Set.size s == 2)
+    & map Set.toList
+    & map (map (foldl' (\v a -> let Digit n = m Map.! a in v * 10 + n) 0))
+    & map product
+    & sum
+ where
+  starPositions = Map.keysSet $ Map.filter (== Part '*') m
+
+  twoNeighbours ns starPosition =
+    Set.size (Set.filter (any (`Set.member` neighbours8 starPosition)) ns) == 2
+
+  isNeighbour p = any (`Set.member` neighbours8 p)

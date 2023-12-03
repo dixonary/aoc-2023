@@ -5,6 +5,9 @@ module Utils.Utils where
 import Data.Map (Map)
 import Data.Map qualified as Map
 
+import Data.List qualified as List
+import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
 import Debug.Trace
 
 {-
@@ -26,7 +29,7 @@ mapFromNestedLists = Map.fromList . attachCoords 0 0
  where
   attachCoords _ _ [] = []
   attachCoords x _ ([] : ls) = attachCoords (x + 1) 0 ls
-  attachCoords x y ((l : ls) : lss) = ((x, y), l) : (attachCoords x (y + 1) (ls : lss))
+  attachCoords x y ((l : ls) : lss) = ((x, y), l) : attachCoords x (y + 1) (ls : lss)
 
 -- Splits a list into maximal contiguous chunks that satisfy the given predicate.
 -- For example:
@@ -38,8 +41,8 @@ chunksByPredicate p ls
   | otherwise =
       let (prefix, rest) = span p ls
        in if null prefix
-            then (chunksByPredicate p $ dropWhile (not . p) rest)
-            else prefix : (chunksByPredicate p $ dropWhile (not . p) rest)
+            then chunksByPredicate p $ dropWhile (not . p) rest
+            else prefix : chunksByPredicate p (dropWhile (not . p) rest)
 
 -- Allows the user to log out some context and then the result of some expression
 -- For example, supposing a is 2, and b is 5:
@@ -53,7 +56,7 @@ traceShowIdWithContext context result = trace (show context ++ "\t" ++ show resu
 list !!? index =
   if
     | index < 0 -> Nothing
-    | index >= (length list) -> Nothing
+    | index >= length list -> Nothing
     | otherwise -> Just $ list !! index
 
 -- Given a map where the keys are co-ordinates, returns the minimum x, maximum x, minimum y, and maximum y; in that order.
@@ -83,7 +86,7 @@ diff :: (Num a) => a -> a -> a
 x `diff` y = abs $ x - y
 
 (!@) :: (Ord k, Monoid a) => Map k a -> k -> a
-m !@ k = maybe mempty id $ Map.lookup k m
+m !@ k = fromMaybe mempty $ Map.lookup k m
 
 -- Repeat an operation until the inputs do not change
 converge :: (Eq a) => (a -> a) -> a -> a
@@ -92,3 +95,21 @@ converge = until =<< ((==) =<<)
 -- Apply a function to both elements of a pair
 both :: (a -> b) -> (a, a) -> (b, b)
 both f (x, y) = (f x, f y)
+
+-- Get all the neighbours of a point...
+
+-- ... orthogonally
+neighbours4 (x, y) =
+  Set.fromList [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+
+-- ... and diagonally
+neighbours8 (x, y) =
+  Set.fromList
+    [ (x', y')
+    | x' <- [x - 1 .. x + 1]
+    , y' <- [y - 1 .. y + 1]
+    , (x', y') /= (x, y)
+    ]
+
+numerate :: (Foldable t) => t Integer -> Integer
+numerate = List.foldl' (\v a -> v * 10 + a) 0
