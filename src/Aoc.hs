@@ -153,3 +153,37 @@ day03b m =
     Set.size (Set.filter (any (`Set.member` neighbours8 starPosition)) ns) == 2
 
   isNeighbour p = any (`Set.member` neighbours8 p)
+
+--------------------------------------------------------------------------------
+-- DAY 04
+
+parse04 :: Parser (Map Integer (Set Integer, Set Integer))
+parse04 = Map.fromList <$> card `sepBy` endOfLine
+ where
+  card = do
+    string "Card"
+    skipSpace
+    n <- decimal
+    char ':'
+    ns <- (skipSpace *> decimal) `sepBy` skipSpace `around` string " |"
+    pure (n, both Set.fromList ns)
+
+day04a :: Map Integer (Set Integer, Set Integer) -> Integer
+day04a =
+  sum
+    . fmap
+      ( (\case 0 -> 0; n -> 2 ^ pred n)
+          . Set.size
+          . uncurry Set.intersection
+      )
+
+day04b :: Map Integer (Set Integer, Set Integer) -> Integer
+day04b m = sum . foldl' f (fmap (const 1) m) . Map.keys $ m
+ where
+  f mm ix =
+    let
+      wins = Set.size . uncurry Set.intersection $ m Map.! ix
+      score = (\case 0 -> 0; w -> 2 ^ pred w) wins
+      copies = mm Map.! ix
+     in
+      foldl' (flip (Map.adjust (+ copies))) mm [ix + 1 .. ix + from wins]
