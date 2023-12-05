@@ -237,12 +237,12 @@ day05b (seeds, funcs) = day05a (findBoundaries [minSeed], funcs)
       bs (min, max)
         | min >= max = min
         | otherwise =
-            let
-              mid = (min + max) `div` 2
-             in
-              if chain mid == h
-                then bs (mid + 1, max)
-                else bs (min, mid)
+            if chain mid == h
+              then bs (mid + 1, max)
+              else bs (min, mid)
+       where
+        mid = (min + max) `div` 2
+
       res = bs (x + 1, maxSeed)
      in
       case nextInRange res of
