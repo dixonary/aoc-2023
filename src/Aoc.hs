@@ -226,7 +226,7 @@ day05b (seeds, funcs) = day05a (findBoundaries [minSeed], funcs)
       [] -> Nothing
       ls -> Just $ minimum ls
 
-  -- Get the chain of mappings for a given result and the final answer
+  -- Get the chain of mappings for a given result but discard the answer
   chain seed = fst $ foldl' (\(h, v) f -> first (: h) $ f v) ([], seed) funcs
 
   -- Work out the boundary points via binary search
