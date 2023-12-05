@@ -23,7 +23,8 @@ executable aoc
         pretty-simple,
         vector,
         stm,
-        monad-loops
+        monad-loops,
+        mtl
         
     other-modules:
         Aoc

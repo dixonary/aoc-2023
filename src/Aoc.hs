@@ -9,7 +9,7 @@ import Utils.Parsers as P
 import Utils.Utils as U
 
 import Data.Function
-import Data.List (find, foldl', isPrefixOf)
+import Data.List (find, foldl', isPrefixOf, sortOn)
 
 import Control.Applicative.Combinators
 import Control.Arrow ((>>>))
@@ -22,6 +22,8 @@ import Data.Text (Text)
 import Data.Text qualified as T
 
 import Data.Char
+import Data.Foldable
+import Data.List.Split (chunksOf)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Monoid (Product (..))
@@ -30,6 +32,8 @@ import Data.Set qualified as Set
 import Data.Tuple (swap)
 import Debug.Trace
 import Prelude hiding (takeWhile)
+
+import Control.Monad.Writer
 
 --------------------------------------------------------------------------------
 -- DAY 01
@@ -187,3 +191,60 @@ day04b m = sum . foldl' f (fmap (const 1) m) . Map.keys $ m
       copies = mm Map.! ix
      in
       foldl' (flip (Map.adjust (+ copies))) mm [ix + 1 .. ix + from wins]
+
+--------------------------------------------------------------------------------
+-- DAY 05
+
+parse05 :: Parser ([Integer], [Integer -> (Int, Integer)])
+parse05 = do
+  seeds <- takeTill isNumber *> decimal `sepBy` " "
+  fs <- many $ do
+    takeTill (== ':') >> ":" >> skipSpace
+    ranges <- flip sepBy endOfLine do
+      (,,) <$> (decimal <* skipSpace) <*> (decimal <* skipSpace) <*> decimal
+    pure $ \n -> case find (\(a, b, c) -> b <= n && n < b + c) ranges of
+      Nothing -> (-1, n)
+      Just (a, b, _) -> (fromIntegral b, n - b + a)
+  pure (seeds, fs)
+
+day05a :: ([Integer], [Integer -> (Int, Integer)]) -> Integer
+day05a (seeds, funcs) =
+  minimum $ map (foldl' (>>>) id $ map (snd .) funcs) seeds
+
+day05b :: ([Integer], [Integer -> (Int, Integer)]) -> Integer
+day05b (seeds, funcs) = day05a (findBoundaries [minSeed], funcs)
+ where
+  ns = chunksOf 2 seeds
+  seedRanges = sortOn head ns
+  minSeed = head $ head seedRanges
+  maxSeed = maximum [h + l | [h, l] <- ns]
+
+  -- Get the next seed value that is a member of any range
+  nextInRange n = case find (\[x, y] -> n >= x && n < x + y) seedRanges of
+    Just [x, y] -> Just n
+    Nothing -> case filter (> n) $ map head seedRanges of
+      [] -> Nothing
+      ls -> Just $ minimum ls
+
+  -- Get the chain of mappings for a given result and the final answer
+  chain seed = fst $ foldl' (\(h, v) f -> first (: h) $ f v) ([], seed) funcs
+
+  -- Work out the boundary points via binary search
+  findBoundaries :: [Integer] -> [Integer]
+  findBoundaries (x : xs) =
+    let
+      h = chain x
+      bs (min, max)
+        | min >= max = min
+        | otherwise =
+            let
+              mid = (min + max) `div` 2
+             in
+              if chain mid == h
+                then bs (mid + 1, max)
+                else bs (min, mid)
+      res = bs (x + 1, maxSeed)
+     in
+      case nextInRange res of
+        Nothing -> xs
+        Just n -> findBoundaries $ n : x : xs

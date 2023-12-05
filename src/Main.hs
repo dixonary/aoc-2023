@@ -49,8 +49,9 @@ instance From String Integer where from = read
 instance From Integer String where from = show
 instance From String Int where from = read
 instance From Int String where from = show
-instance (Read a, From String a) => From String [a] where from = read
-instance (Show a, From a String) => From [a] String where from = show
+
+-- instance (Read a, From String a) => From String [a] where from = read
+-- instance (Show a, From a String) => From [a] String where from = show
 
 --------------------------------------------------------------------------------
 -- Day parsers can be direct functions or an Attoparser Parser
