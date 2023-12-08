@@ -9,7 +9,7 @@ import Utils.Parsers as P
 import Utils.Utils as U
 
 import Data.Function
-import Data.List (find, foldl', isPrefixOf, sortOn, transpose)
+import Data.List (find, foldl', group, isPrefixOf, sort, sortOn, transpose)
 
 import Control.Applicative.Combinators
 import Control.Arrow ((>>>))
@@ -34,6 +34,8 @@ import Debug.Trace
 import Prelude hiding (takeWhile)
 
 import Control.Monad.Writer
+import Data.Coerce (coerce)
+import Data.Ord (Down (..))
 
 --------------------------------------------------------------------------------
 -- DAY 01
@@ -270,3 +272,34 @@ day06a =
 
 day06b :: [[Integer]] -> Integer
 day06b = day06a . map (pure . read @Integer . concatMap show)
+
+--------------------------------------------------------------------------------
+-- DAY 07
+
+data CardVal = V Char | T | J | Q | K | A deriving (Read, Eq, Ord, Show)
+
+instance From Text [CardVal] where
+  from = T.unpack >>> map (\c -> if isDigit c then V c else read $ pure c)
+
+-- For part B
+data CardVal' = J' | V' Char | T' | Q' | K' | A' deriving (Eq, Ord, Show)
+instance From [CardVal] [CardVal'] where
+  from = map \case J -> J'; V x -> V' x; T -> T'; Q -> Q'; K -> K'; A -> A'
+
+parse07 :: Parser [([CardVal], Integer)]
+parse07 = flip sepBy endOfLine do
+  first from <$> ((,) <$> takeWhile isAlphaNum <*> (" " *> decimal))
+
+day07a :: [([CardVal], Integer)] -> Integer
+day07a = sum . zipWith (*) [1 ..] . map snd . sortOn (rank . fst)
+ where
+  rank x = (sortOn Down . map length . group . sort $ x, x)
+
+day07b :: [([CardVal], Integer)] -> Integer
+day07b = sum . zipWith (*) [1 ..] . map snd . sortOn (rank . from . fst)
+ where
+  rank x = (addJs $ sortOn Down $ map length $ group $ sort nj, x)
+   where
+    nj = filter (/= J') x
+    addJs [] = [5]
+    addJs (h : t) = h + length (filter (== J') x) : t

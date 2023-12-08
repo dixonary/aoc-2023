@@ -113,3 +113,6 @@ neighbours8 (x, y) =
 
 numerate :: (Foldable t) => t Integer -> Integer
 numerate = List.foldl' (\v a -> v * 10 + a) 0
+
+with :: (a -> b) -> a -> (b, a)
+with f a = (f a, a)
