@@ -9,7 +9,7 @@ import Utils.Parsers as P
 import Utils.Utils as U
 
 import Data.Function
-import Data.List (find, foldl', isPrefixOf, sortOn)
+import Data.List (find, foldl', isPrefixOf, sortOn, transpose)
 
 import Control.Applicative.Combinators
 import Control.Arrow ((>>>))
@@ -248,3 +248,25 @@ day05b (seeds, funcs) = day05a (findBoundaries [minSeed], funcs)
       case nextInRange res of
         Nothing -> xs
         Just n -> findBoundaries $ n : x : xs
+
+--------------------------------------------------------------------------------
+-- DAY 06
+
+parse06 :: Parser [[Integer]]
+parse06 = count 4 (takeTill isNumber *> decimal) `sepBy` endOfLine
+
+day06a :: [[Integer]] -> Integer
+day06a =
+  transpose
+    >>> map (map fromIntegral)
+    >>> product
+    . map \[time, distance] ->
+      let
+        disc = sqrt $ time ^ 2 - 4 * (distance + 0.01)
+        x = ceiling $ (time - disc) / 2
+        y = floor $ (time + disc) / 2
+       in
+        y - x + 1
+
+day06b :: [[Integer]] -> Integer
+day06b = day06a . map (pure . read @Integer . concatMap show)
