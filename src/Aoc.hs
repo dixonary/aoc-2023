@@ -282,9 +282,9 @@ instance From Text [CardVal] where
   from = T.unpack >>> map (\c -> if isDigit c then V c else read $ pure c)
 
 -- For part B
-data CardVal' = J' | V' Char | T' | Q' | K' | A' deriving (Eq, Ord, Show)
-instance From [CardVal] [CardVal'] where
-  from = map \case J -> J'; V x -> V' x; T -> T'; Q -> Q'; K -> K'; A -> A'
+data CardValB = JB | VB Char | TB | QB | KB | AB deriving (Eq, Ord, Show)
+instance From [CardVal] [CardValB] where
+  from = map \case J -> JB; V x -> VB x; T -> TB; Q -> QB; K -> KB; A -> AB
 
 parse07 :: Parser [([CardVal], Integer)]
 parse07 = flip sepBy endOfLine do
@@ -300,6 +300,6 @@ day07b = sum . zipWith (*) [1 ..] . map snd . sortOn (rank . from . fst)
  where
   rank x = (addJs $ sortOn Down $ map length $ group $ sort nj, x)
    where
-    nj = filter (/= J') x
+    nj = filter (/= JB) x
     addJs [] = [5]
-    addJs (h : t) = h + length (filter (== J') x) : t
+    addJs (h : t) = h + length (filter (== JB) x) : t
