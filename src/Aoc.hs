@@ -9,7 +9,7 @@ import Utils.Parsers as P
 import Utils.Utils as U
 
 import Data.Function
-import Data.List (find, foldl', group, isPrefixOf, sort, sortOn, transpose)
+import Data.List (elemIndex, find, findIndex, foldl', group, isPrefixOf, sort, sortOn, transpose)
 
 import Control.Applicative.Combinators
 import Control.Arrow ((>>>))
@@ -17,7 +17,7 @@ import Data.Attoparsec.Text hiding (choice, count, sepBy, sepBy1, take)
 import Data.Bifunctor
 import Data.Either
 import Data.Functor
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromJust)
 import Data.Text (Text)
 import Data.Text qualified as T
 
@@ -35,6 +35,7 @@ import Prelude hiding (takeWhile)
 
 import Control.Monad.Writer
 import Data.Coerce (coerce)
+import Data.List qualified as List
 import Data.Ord (Down (..))
 
 --------------------------------------------------------------------------------
@@ -303,3 +304,43 @@ day07b = sum . zipWith (*) [1 ..] . map snd . sortOn (rank . from . fst)
     nj = filter (/= JB) x
     addJs [] = [5]
     addJs (h : t) = h + length (filter (== JB) x) : t
+
+--------------------------------------------------------------------------------
+-- DAY 08
+
+parse08 :: Parser (String, Map Text (Map Char Text))
+parse08 = do
+  dirs <- T.unpack <$> takeWhile isAlpha
+  skipSpace
+  rules <-
+    Map.fromList <$> flip sepBy endOfLine do
+      from <- takeWhile isAlphaNum <* " = ("
+      l <- takeWhile isAlphaNum <* ", "
+      r <- takeWhile isAlphaNum <* ")"
+      pure (from, Map.fromList [('L', l), ('R', r)])
+  pure (dirs, rules)
+
+day08a :: (String, Map Text (Map Char Text)) -> Int
+day08a (dirs, edges) =
+  let
+    move pos d = edges Map.! pos Map.! d
+    positions = scanl move "AAA" (cycle dirs)
+   in
+    fromJust $ elemIndex "ZZZ" positions
+
+-- This is dumb. It *just so happens* that:
+-- 1 Every starting position leads to a cycle back to itself
+-- 2 The cycle length is always 0 mod (length of instructions)
+-- 3 The final element of that cycle is a Z position
+-- 4 The final element of that cycle is the Z position on which all cycles align
+-- This reduces the difficulty of the problem by *a lot*...
+day08b :: (String, Map Text (Map Char Text)) -> Integer
+day08b (dirs, edges) =
+  let
+    loop p =
+      List.takeWhile (not . ("Z" `T.isSuffixOf`))
+        $ scanl move p (cycle dirs)
+    starts = Set.filter ("A" `T.isSuffixOf`) $ Map.keysSet edges
+    move pos d = edges Map.! pos Map.! d
+   in
+    foldl' lcm 1 $ Set.map (from . length . loop) starts
