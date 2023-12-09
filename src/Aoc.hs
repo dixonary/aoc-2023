@@ -33,6 +33,7 @@ import Data.Tuple (swap)
 import Debug.Trace
 import Prelude hiding (takeWhile)
 
+import Control.Monad.Loops (iterateUntil)
 import Control.Monad.Writer
 import Data.Coerce (coerce)
 import Data.List qualified as List
@@ -344,3 +345,25 @@ day08b (dirs, edges) =
     move pos d = edges Map.! pos Map.! d
    in
     foldl' lcm 1 $ Set.map (from . length . loop) starts
+
+--------------------------------------------------------------------------------
+-- DAY 09
+
+parse09 :: Parser [[Integer]]
+parse09 = signed decimal `sepBy` " " `sepBy` endOfLine
+
+day09a :: [[Integer]] -> Integer
+day09a =
+  sum . map \xs ->
+    let
+      diffs a = zipWith subtract a (tail a)
+      continue :: [Integer] -> [Integer]
+      continue xs =
+        if all (== 0) $ diffs xs
+          then repeat (head xs)
+          else fix \n -> head xs : zipWith (+) n (continue $ diffs xs)
+     in
+      (continue xs !! max 0 (length xs))
+
+day09b :: [[Integer]] -> Integer
+day09b = day09a . map reverse
