@@ -356,12 +356,12 @@ day09a :: [[Integer]] -> Integer
 day09a =
   sum . map \xs ->
     let
-      diffs a = zipWith subtract a (tail a)
       continue :: [Integer] -> [Integer]
       continue xs =
-        if all (== 0) $ diffs xs
-          then repeat (head xs)
-          else fix \n -> head xs : zipWith (+) n (continue $ diffs xs)
+        let ds = zipWith subtract xs (tail xs)
+         in if all (== 0) ds
+              then repeat $ head xs
+              else fix \n -> head xs : zipWith (+) n (continue ds)
      in
       continue xs !! max 0 (length xs)
 
