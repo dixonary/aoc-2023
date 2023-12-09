@@ -363,7 +363,7 @@ day09a =
           then repeat (head xs)
           else fix \n -> head xs : zipWith (+) n (continue $ diffs xs)
      in
-      (continue xs !! max 0 (length xs))
+      continue xs !! max 0 (length xs)
 
 day09b :: [[Integer]] -> Integer
 day09b = day09a . map reverse
