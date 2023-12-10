@@ -17,7 +17,7 @@ import Data.Attoparsec.Text hiding (choice, count, sepBy, sepBy1, take)
 import Data.Bifunctor
 import Data.Either
 import Data.Functor
-import Data.Maybe (catMaybes, fromJust)
+import Data.Maybe (catMaybes, fromJust, mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 
@@ -35,9 +35,12 @@ import Prelude hiding (takeWhile)
 
 import Control.Monad.Loops (iterateUntil)
 import Control.Monad.Writer
+import Data.Bool (bool)
 import Data.Coerce (coerce)
 import Data.List qualified as List
 import Data.Ord (Down (..))
+
+import Text.Regex.TDFA
 
 --------------------------------------------------------------------------------
 -- DAY 01
@@ -367,3 +370,65 @@ day09a =
 
 day09b :: [[Integer]] -> Integer
 day09b = day09a . map reverse
+
+--------------------------------------------------------------------------------
+-- DAY 10
+
+parse10 :: Parser (Map (Int, Int) Char)
+parse10 = coordinateParser Just 0
+
+getPipe10 :: Map (Int, Int) Char -> Set (Int, Int)
+getPipe10 m = Set.fromList $ flood [startPos]
+ where
+  startPos = fst $ Map.findMin $ Map.filter (== 'S') m
+  flood :: [(Int, Int)] -> [(Int, Int)]
+  flood (h@(x, y) : t) =
+    let
+      f p = flood (p : h : t)
+      ps :: (Int, Int) -> String -> Maybe (Int, Int)
+      ps p vs = m Map.!? p >>= \x -> bool Nothing (Just p) (x `elem` vs)
+
+      (left, right) = (ps (x - 1, y) "-LF", ps (x + 1, y) "-7J")
+      (up, down) = (ps (x, y - 1) "|7F", ps (x, y + 1) "|JL")
+     in
+      case (m Map.! h, h |-| head t) of
+        ('S', _) | null t -> f $ fromJust (asum [left, right, up, down])
+        ('S', _) -> h : t
+        ('F', (-1, 0)) -> f (x, y + 1)
+        ('F', (0, -1)) -> f (x + 1, y)
+        ('7', (1, 0)) -> f (x, y + 1)
+        ('7', (0, -1)) -> f (x - 1, y)
+        ('J', (1, 0)) -> f (x, y - 1)
+        ('J', (0, 1)) -> f (x - 1, y)
+        ('L', (-1, 0)) -> f (x, y - 1)
+        ('L', (0, 1)) -> f (x + 1, y)
+        ('-', (1, 0)) -> f (x + 1, y)
+        ('-', (-1, 0)) -> f (x - 1, y)
+        ('|', (0, 1)) -> f (x, y + 1)
+        ('|', (0, -1)) -> f (x, y - 1)
+
+day10a :: Map (Int, Int) Char -> Integer
+day10a m = from $ Set.size (getPipe10 m) `div` 2
+
+day10b :: Map (Int, Int) Char -> Integer
+day10b m =
+  Map.keysSet m
+    & (Set.\\ pipe)
+    & Set.filter interior
+    & Set.size
+    & from
+ where
+  pipe = getPipe10 m
+  interior p =
+    let
+      -- get all pipe pieces in the vertical ray cast down from p
+      pipePieces =
+        map (m Map.!)
+          $ Set.toList
+          $ Set.intersection pipe
+          $ Set.fromList
+          $ U.mapRay m p (0, 1)
+      windings :: String -> [String]
+      windings x = getAllTextMatches (x =~ ("(-|F\\|*J|7\\|*L)" :: String))
+     in
+      odd $ length $ windings pipePieces

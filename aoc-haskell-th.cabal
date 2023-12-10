@@ -24,7 +24,8 @@ executable aoc
         vector,
         stm,
         monad-loops,
-        mtl
+        mtl,
+        regex-tdfa
         
     other-modules:
         Aoc

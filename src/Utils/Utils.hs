@@ -68,6 +68,15 @@ mapBoundingBox m =
     (minimum . fmap snd . Map.keys $ m)
     (maximum . fmap snd . Map.keys $ m)
 
+-- Given a rectangular, filled map, returns a list of all the coordinates hit by some (dx,dy) ray.
+mapRay :: Map (Int, Int) a -> (Int, Int) -> (Int, Int) -> [(Int, Int)]
+mapRay m (x, y) (dx, dy) =
+  let (minX, maxX, minY, maxY) = mapBoundingBox m
+   in [ (x', y')
+      | x' <- if dx == 0 then repeat x else [x, x + dx .. if dx > 0 then maxX else minX]
+      | y' <- if dy == 0 then repeat y else [y, y + dy .. if dy > 0 then maxY else minY]
+      ]
+
 (...) :: (Num a, Ord a, Enum a) => a -> a -> [a]
 (...) x y
   | x <= y = [x .. y]
