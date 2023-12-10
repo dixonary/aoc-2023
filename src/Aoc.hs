@@ -425,4 +425,4 @@ day10b m = from $ Set.size $ Set.filter interior $ (Set.\\ pipe) $ Map.keysSet m
         $ U.mapRay m p (0, 1)
 
     windings :: String -> [String]
-    windings x = getAllTextMatches (x =~ ("(-|F\\|*J|7\\|*L)" :: String))
+    windings x = getAllTextMatches (x =~ ("-|[FS][|S]*[JS]|[7S][|S]*[LS]|S" :: String))
