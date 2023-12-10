@@ -411,12 +411,7 @@ day10a :: Map (Int, Int) Char -> Integer
 day10a m = from $ Set.size (getPipe10 m) `div` 2
 
 day10b :: Map (Int, Int) Char -> Integer
-day10b m =
-  Map.keysSet m
-    & (Set.\\ pipe)
-    & Set.filter interior
-    & Set.size
-    & from
+day10b m = from $ Set.size $ Set.filter interior $ (Set.\\ pipe) $ Map.keysSet m
  where
   pipe = getPipe10 m
   interior p =
