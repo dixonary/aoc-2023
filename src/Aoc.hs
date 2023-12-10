@@ -414,16 +414,15 @@ day10b :: Map (Int, Int) Char -> Integer
 day10b m = from $ Set.size $ Set.filter interior $ (Set.\\ pipe) $ Map.keysSet m
  where
   pipe = getPipe10 m
-  interior p =
-    let
-      -- get all pipe pieces in the vertical ray cast down from p
-      pipePieces =
-        map (m Map.!)
-          $ Set.toList
-          $ Set.intersection pipe
-          $ Set.fromList
-          $ U.mapRay m p (0, 1)
-      windings :: String -> [String]
-      windings x = getAllTextMatches (x =~ ("(-|F\\|*J|7\\|*L)" :: String))
-     in
-      odd $ length $ windings pipePieces
+  interior p = odd $ length $ windings pipePieces
+   where
+    -- get all pipe pieces in the vertical ray cast down from p
+    pipePieces =
+      map (m Map.!)
+        $ Set.toList
+        $ Set.intersection pipe
+        $ Set.fromList
+        $ U.mapRay m p (0, 1)
+
+    windings :: String -> [String]
+    windings x = getAllTextMatches (x =~ ("(-|F\\|*J|7\\|*L)" :: String))
